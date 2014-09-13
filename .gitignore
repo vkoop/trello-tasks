@@ -22,3 +22,6 @@ hs_err_pid*
 
 application.properties
 .classpath
+boottest.iml
+boottest.ipr
+boottest.iws
