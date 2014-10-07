@@ -24,6 +24,7 @@ public class App {
         return new ThreadPoolTaskScheduler();
     }
 
+    @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }
