@@ -15,16 +15,16 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class App {
 
-	public static void main(String[] args) throws Exception {
-		new SpringApplicationBuilder(App.class).run(args);
-	}
+    public static void main(String[] args) throws Exception {
+        new SpringApplicationBuilder(App.class).run(args);
+    }
 
-	@Bean
-	public TaskScheduler taskScheduler() {
-		return  new ThreadPoolTaskScheduler();
-	}
+    @Bean
+    public TaskScheduler taskScheduler() {
+        return new ThreadPoolTaskScheduler();
+    }
 
-    public RestTemplate restTemplate(){
+    public RestTemplate restTemplate() {
         return new RestTemplate();
     }
 }

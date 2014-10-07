@@ -1,9 +1,9 @@
 package de.vkoop;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.commons.lang3.tuple.Pair;
 
 public class TrelloUrl {
 
@@ -41,13 +41,13 @@ public class TrelloUrl {
 
     public static final String CREATE_CARD = "/cards?pos=top&";
     public static final String GET_MEMBER = "/members/{username}?";
-    public static final String ADD_LABEL_TO_CARD = "/cards/{cardId}/labels?";  
-    
+    public static final String ADD_LABEL_TO_CARD = "/cards/{cardId}/labels?";
+
     public static final String GET_MEMBER_BOARDS = "/members/{username}/boards?";
-    
+
     public static final String GET_LIST_CARDS = "/lists/{listId}/cards?";
     public static final String ADD_CARD_TO_LIST = "/lists/{listId}/cards?";
-    
+
     public static final String SEARCH = "/search?";
 
     private String baseUrl;
@@ -57,20 +57,20 @@ public class TrelloUrl {
         this.baseUrl = baseUrl;
     }
 
-    public static TrelloUrl createUrl(String baseUrl){
+    public static TrelloUrl createUrl(String baseUrl) {
         return new TrelloUrl(baseUrl);
     }
 
-    public TrelloUrl params(List<Pair<String, String>>args){
+    public TrelloUrl params(List<Pair<String, String>> args) {
         this.args = args;
         return this;
     }
-    
+
     public String toString() {
         StringBuilder builder = new StringBuilder(API_URL);
         builder.append(baseUrl);
         builder.append(API_KEY_TOKEN_PARAM);
-        for(Pair<String, String> arg : args){
+        for (Pair<String, String> arg : args) {
             builder.append("&");
             builder.append(arg.getLeft());
             builder.append("=");

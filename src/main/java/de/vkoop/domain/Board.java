@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Board  {
+public class Board {
 
     private String id;
     private String name;

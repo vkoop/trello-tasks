@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Action  {
+public class Action {
 
     private String id;
     private String idMemberCreator;
@@ -125,6 +125,7 @@ public class Action  {
             this.username = username;
         }
     }
+
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class Data {
@@ -278,6 +279,7 @@ public class Action  {
             }
         }
 
+
         @JsonIgnoreProperties(ignoreUnknown = true)
         public static final class CheckItem {
             private String state;
@@ -309,6 +311,7 @@ public class Action  {
             }
         }
 
+
         @JsonIgnoreProperties(ignoreUnknown = true)
         public static final class CheckList {
             private String name;
@@ -330,6 +333,7 @@ public class Action  {
                 this.name = name;
             }
         }
+
 
         @JsonIgnoreProperties(ignoreUnknown = true)
         public static final class AttachementShort {

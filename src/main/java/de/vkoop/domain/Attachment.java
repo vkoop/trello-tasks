@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Attachment  {
+public class Attachment {
 
     private String id;
     private int bytes;

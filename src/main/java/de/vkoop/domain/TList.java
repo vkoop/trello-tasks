@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TList  {
+public class TList {
 
     private String id;
     private String name;

@@ -3,7 +3,7 @@ package de.vkoop.domain;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Entity  {
+public class Entity {
     private String type;
     private String id;
     private String text;

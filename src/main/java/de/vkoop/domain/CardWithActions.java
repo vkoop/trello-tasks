@@ -7,10 +7,10 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CardWithActions extends Card {
 
-	private List<Action> actions;
+    private List<Action> actions;
 
-	public List<Action> getActions() {
-		return actions;
-	}
+    public List<Action> getActions() {
+        return actions;
+    }
 
 }
