@@ -5,6 +5,8 @@ import de.vkoop.domain.BoardlistResult;
 import de.vkoop.domain.Card;
 import de.vkoop.domain.CardlistResult;
 import de.vkoop.domain.TList;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang3.tuple.Pair;
 import org.scribe.builder.ServiceBuilder;
 import org.scribe.builder.api.TrelloApi;
@@ -26,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Controller
 public class TrelloController {
@@ -39,8 +43,12 @@ public class TrelloController {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private TrelloCardCopyTask.Factory taskFactory;
+
     @ResponseBody
-    @RequestMapping("/checkReturning") String checkReturning() throws IOException {
+    @RequestMapping("/start")
+    public String checkReturning() throws IOException {
         List<Pair<String, String>> args = Lists.newArrayList(
             Pair.of("query", "qqtemplate"),
             Pair.of("modelTypes", "cards")
@@ -53,66 +61,66 @@ public class TrelloController {
         // board get all cards
         result.getItems().stream()
             .map(Card::getDesc)
-            .forEach(this::parseTask);
+            .map(this::parseTask)
+            .forEach(this::schedule);
 
-        return "success";
+        return "Started the sync.";
     }
 
-    private void parseTask(String taskDescription) {
+    private void schedule(Optional<TrelloCardCopyTask> task) {
+        if (task.isPresent() && !scheduler.exists(task.get())) {
+            scheduler.schedule(task.get(), task.get().cronString);
+        }
+    }
+
+    private Optional<TrelloCardCopyTask> parseTask(String taskDescription) {
+
+        String[] stringParts = taskDescription.split("@@");
+        String header = stringParts[0];
+        String body = stringParts[1];
+
+        Properties props = new Properties();
         try {
-            String content = taskDescription;
-
-            String[] stringParts = content.split("@@");
-            String header = stringParts[0];
-            String body = stringParts[1];
-
-            Properties props = new Properties();
             props.load(new StringReader(header));
-
-            String cronString = (String) props.get("repeated");
-            String targetBoard = (String) props.get("targetboard");
-            String targetList = (String) props.get("targetlist");
-            String title = (String) props.get("title");
-
-            List<Pair<String, String>> args = Lists.newArrayList(
-                Pair.of("query", "name:" + targetBoard),
-                Pair.of("modelTypes", "boards")
-            );
-
-
-            String searchUrl = TrelloUrl.createUrl(TrelloUrl.SEARCH).params(args).toString();
-            BoardlistResult result =
-                restTemplate.getForObject(searchUrl, BoardlistResult.class, trelloConfig.API_KEY, trelloConfig.MY_TOKEN);
-
-            String boardId = result.getItems().get(0).getId();
-            String url = TrelloUrl.createUrl(TrelloUrl.GET_BOARD_LISTS).toString();
-            List<TList> result2 = Arrays.asList(
-                restTemplate.getForObject(url, TList[].class, boardId, trelloConfig.API_KEY, trelloConfig.MY_TOKEN)
-            );
-
-            Optional<TList> tl2 = result2.stream()
-                .filter(tl -> tl.getName().equals(targetList))
-                .findFirst();
-
-
-            tl2.map(tlist -> {
-                String listId = tlist.getId();
-                TrelloCardCopyTask copyTask = new TrelloCardCopyTask(title, body, listId);
-                copyTask.config = trelloConfig;
-                if (!scheduler.exists(copyTask)) {
-                    scheduler.schedule(copyTask, cronString);
-                }
-                return true;
-            });
-
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
+            return Optional.empty();
         }
 
+        String cronString = (String) props.get("repeated");
+        String targetBoard = (String) props.get("targetboard");
+        String targetList = (String) props.get("targetlist");
+        String title = (String) props.get("title");
+
+        List<Pair<String, String>> args = Lists.newArrayList(
+            Pair.of("query", "name:" + targetBoard),
+            Pair.of("modelTypes", "boards")
+        );
+
+
+        String searchUrl = TrelloUrl.createUrl(TrelloUrl.SEARCH).params(args).toString();
+        BoardlistResult result = restTemplate.getForObject(searchUrl, BoardlistResult.class, trelloConfig.API_KEY, trelloConfig.MY_TOKEN);
+
+        String boardId = result.getItems().get(0).getId();
+        String url = TrelloUrl.createUrl(TrelloUrl.GET_BOARD_LISTS).toString();
+        List<TList> result2 = Arrays.asList(
+            restTemplate.getForObject(url, TList[].class, boardId, trelloConfig.API_KEY, trelloConfig.MY_TOKEN)
+        );
+
+
+        Optional<TList> tl2 = result2.stream()
+            .filter(tl -> tl.getName().equals(targetList))
+            .findFirst();
+
+
+        return tl2.map(tlist -> {
+            String listId = tlist.getId();
+            return taskFactory.create(title, body, listId, cronString);
+        });
     }
 
-    @RequestMapping("/trelloConnect") String trelloConnect(HttpServletRequest request) {
+    @RequestMapping("/trelloConnect")
+    public String trelloConnect(HttpServletRequest request) {
         OAuthService service = new ServiceBuilder()
             .provider(TrelloApi.class)
             .apiKey(trelloConfig.API_KEY)
@@ -132,7 +140,8 @@ public class TrelloController {
     }
 
     @RequestMapping("/trelloCallback")
-    @ResponseBody String trelloCallback(@RequestParam("oauth_verifier") String verifierString,
+    @ResponseBody
+    public String trelloCallback(@RequestParam("oauth_verifier") String verifierString,
         HttpServletRequest request) {
         OAuthService service = new ServiceBuilder()
             .provider(TrelloApi.class)
@@ -148,9 +157,18 @@ public class TrelloController {
         Verifier verifier = new Verifier(verifierString);
         Token accessToken = service.getAccessToken(token, verifier);
 
-        return accessToken.getToken();
+        try {
+            PropertiesConfiguration config = new PropertiesConfiguration("application.properties");
+            config.setProperty("TRELLOTOKEN", accessToken.getToken());
+            config.save();
+
+            trelloConfig.MY_TOKEN = accessToken.getToken();
+        } catch (ConfigurationException ex) {
+            Logger.getLogger(TrelloController.class.getName()).log(Level.SEVERE, null, ex);
+            return "Failed to write token to properties file!";
+        }
+
+        return "You have been connected successfully. Token:" + accessToken.getToken();
     }
-
-
 
 }

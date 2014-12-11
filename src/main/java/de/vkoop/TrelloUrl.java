@@ -66,6 +66,7 @@ public class TrelloUrl {
         return this;
     }
 
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder(API_URL);
         builder.append(baseUrl);

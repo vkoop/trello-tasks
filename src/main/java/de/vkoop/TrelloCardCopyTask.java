@@ -1,9 +1,28 @@
 package de.vkoop;
 
 import de.vkoop.domain.Card;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 public class TrelloCardCopyTask implements Runnable, Identifiable {
+
+    @Component
+    public static class Factory {
+
+        @Autowired
+        TrelloConfig trelloConfig;
+
+        public TrelloCardCopyTask create(String name, String content,
+                String destinationListId, String cronString) {
+            TrelloCardCopyTask task = new TrelloCardCopyTask(name, content, destinationListId, cronString);
+            task.config = trelloConfig;
+
+            return task;
+        }
+    }
+    
+    public final String cronString;
 
     public final String destinationListId;
 
@@ -11,14 +30,15 @@ public class TrelloCardCopyTask implements Runnable, Identifiable {
 
     public final String name;
 
+    @Autowired
     public TrelloConfig config;
 
     public TrelloCardCopyTask(String name, String content,
-        String destinationListId) {
-        super();
+            String destinationListId, String cronString) {
         this.destinationListId = destinationListId;
         this.name = name;
         this.content = content;
+        this.cronString = cronString;
     }
 
     @Override
@@ -32,6 +52,7 @@ public class TrelloCardCopyTask implements Runnable, Identifiable {
         restTemplate.postForLocation(url, card, destinationListId, config.API_KEY, config.MY_TOKEN);
     }
 
+    @Override
     public String getId() {
         return name + destinationListId;
     }

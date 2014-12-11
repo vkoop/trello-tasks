@@ -17,7 +17,7 @@ public class TrelloConfig {
     @Value("${CALLBACK_URL}")
     public String CALLBACK_URL;
 
-    @Value("${MY_TOKEN}")
+    @Value("${TRELLOTOKEN}")
     public String MY_TOKEN;
 
 }
